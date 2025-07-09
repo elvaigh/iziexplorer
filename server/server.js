@@ -158,6 +158,10 @@ app.get('/tasks', (req, res) => {
 app.use(errorHandler);
 
 // Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
-});
+(async () => {
+  await createTables();
+
+  app.listen(PORT, () => {
+    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+  });
+ })();
