@@ -1,4 +1,4 @@
-const pool = require('../db');
+const { createTables, pool } = require('../db');
 
 const getAllEvents = async () => {
   const res = await pool.query('SELECT * FROM calendar_events');

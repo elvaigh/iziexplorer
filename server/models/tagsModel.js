@@ -1,4 +1,4 @@
-const pool = require('../db');
+const { createTables, pool } = require('../db');
 
 // Get all tags
 exports.getAllTags = async () => {

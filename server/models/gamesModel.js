@@ -1,4 +1,4 @@
-const pool = require('../db');
+const { createTables, pool } = require('../db');
 
 const getAllGames = async () => {
   const res = await pool.query('SELECT * FROM games');
