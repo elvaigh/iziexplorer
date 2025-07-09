@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const db = require('./db');
+const { createTables } = require('./db');
 const gamesRoutes = require('./routes/gamesRoutes');
 const tasksRoutes = require('./routes/tasksRoutes');
 const tagsRoutes = require('./routes/tagsRoutes');
