@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Jeu des différences - Clés</title>
+  <style>
+    body { background: #222; color: #fff; text-align: center; font-family: Arial; }
+    #container { display: flex; flex-direction: column; align-items: center; margin-top: 30px; }
+    #gameCanvas { background: #444; display: block; margin: 0 auto; border-radius: 12px; }
+    #buttons { margin: 15px; }
+    .btn { padding: 8px 16px; margin: 5px; font-size: 16px; border-radius: 6px; border: none; cursor: pointer;}
+    #fileInput { margin: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Jeu des différences : Trouve les clés !</h2>
+  <div id="container">
+    <input type="file" id="fileInput" accept="image/*">
+    <div id="buttons">
+      <button class="btn" id="startCreate">Créer les clés</button>
+      <button class="btn" id="finishCreate" disabled>Valider le jeu</button>
+      <button class="btn" id="restart" style="display:none;">Rejouer</button>
+    </div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div id="info"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
+    const startCreateBtn = document.getElementById('startCreate');
+    const finishCreateBtn = document.getElementById('finishCreate');
+    const restartBtn = document.getElementById('restart');
+    const info = document.getElementById('info');
+
+    let image = new Image();
+    let imageLoaded = false;
+    let gameState = 'idle'; // 'idle', 'create', 'play'
+    let keys = []; // [{x, y, found}]
+    const KEY_RADIUS = 32; // rayon de la zone de clic
+    const KEY_ICON = "🔑"; // icône clé
+
+    // Centrage de l'image sur le canvas
+    function drawImageCentered() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!imageLoaded) return;
+      // Calcul du ratio pour centrer et ajuster l'image
+      let scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+      let imgW = image.width * scale;
+      let imgH = image.height * scale;
+      let offsetX = (canvas.width - imgW) / 2;
+      let offsetY = (canvas.height - imgH) / 2;
+      ctx.drawImage(image, offsetX, offsetY, imgW, imgH);
+
+      // Affichage des clés selon l'état
+      if (gameState === 'create') {
+        keys.forEach(k => {
+          // Cercle de la clé (zone de clic)
+          ctx.beginPath();
+          ctx.arc(k.x, k.y, KEY_RADIUS, 0, 2 * Math.PI);
+          ctx.strokeStyle = 'yellow';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          // Icône clé
+          ctx.font = "28px Arial";
+          ctx.fillText(KEY_ICON, k.x - 14, k.y + 10);
+        });
+      } else if (gameState === 'play') {
+        keys.forEach(k => {
+          if (k.found) {
+            // Affiche la clé trouvée
+            ctx.font = "32px Arial";
+            ctx.fillText(KEY_ICON, k.x - 16, k.y + 12);
+          }
+        });
+      }
+    }
+
+    // Chargement de l'image
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        image.onload = function() {
+          imageLoaded = true;
+          drawImageCentered();
+          info.textContent = "Cliquez sur 'Créer les clés' pour placer les clés.";
+        };
+        image.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Phase de création
+    startCreateBtn.onclick = () => {
+      if (!imageLoaded) {
+        alert("Veuillez charger une image d'abord !");
+        return;
+      }
+      keys = [];
+      gameState = 'create';
+      finishCreateBtn.disabled = false;
+      restartBtn.style.display = "none";
+      info.textContent = "Cliquez sur l'image pour placer les clés (zones à trouver).";
+      drawImageCentered();
+    };
+
+    // Placer les clés
+    canvas.addEventListener('click', function(e) {
+      if (gameState !== 'create') return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      keys.push({x, y, found: false});
+      drawImageCentered();
+    });
+
+    // Fin de la création - début du jeu
+    finishCreateBtn.onclick = () => {
+      if (keys.length === 0) {
+        alert("Ajoutez au moins une clé !");
+        return;
+      }
+      gameState = 'play';
+      keys.forEach(k => k.found = false);
+      finishCreateBtn.disabled = true;
+      restartBtn.style.display = "inline-block";
+      info.textContent = "Trouve toutes les clés cachées en cliquant sur les bons endroits !";
+      drawImageCentered();
+    };
+
+    // Jouer : trouver les clés
+    canvas.addEventListener('click', function(e) {
+      if (gameState !== 'play') return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      let foundOne = false;
+      keys.forEach(k => {
+        if (!k.found) {
+          const d = Math.sqrt((k.x - x)**2 + (k.y - y)**2);
+          if (d < KEY_RADIUS) {
+            k.found = true;
+            foundOne = true;
+          }
+        }
+      });
+      drawImageCentered();
+      if (foundOne) {
+        info.textContent = "Bravo ! Tu as trouvé une clé.";
+        if (keys.every(k => k.found)) {
+          info.textContent = "Félicitations, tu as trouvé toutes les clés !";
+        }
+      }
+    });
+
+    // Rejouer
+    restartBtn.onclick = () => {
+      keys.forEach(k => k.found = false);
+      gameState = 'play';
+      info.textContent = "Trouve toutes les clés cachées en cliquant sur les bons endroits !";
+      drawImageCentered();
+    };
+
+    // Redessiner à chaque resize
+    window.addEventListener('resize', drawImageCentered);
+  </script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu des Différences avec Clés</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #game-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+        #difference-image {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #333;
+        }
+        .key {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffcc00"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>');
+            background-size: contain;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+        }
+        .found {
+            opacity: 0.5;
+        }
+        #mode-selector {
+            margin: 20px;
+        }
+        #timer, #score {
+            font-size: 1.5em;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jeu des Différences avec Clés</h1>
+    
+    <div id="mode-selector">
+        <button id="setup-btn">Mode Création</button>
+        <button id="play-btn">Mode Jeu</button>
+    </div>
+    
+    <div id="game-area">
+        <div id="timer">Temps: 0s</div>
+        <div id="score">Clés trouvées: 0/0</div>
+        
+        <div id="game-container">
+            <img id="difference-image" src="" alt="Image des différences">
+        </div>
+        
+        <div id="setup-controls" style="display: none;">
+            <input type="file" id="image-upload" accept="image/*">
+            <p>Cliquez sur l'image pour placer une clé</p>
+            <button id="save-keys">Enregistrer les Clés</button>
+            <button id="start-game">Commencer le Jeu</button>
+        </div>
+    </div>
+
+    <script>
+        // Variables du jeu
+        let keys = [];
+        let foundKeys = 0;
+        let gameMode = 'setup'; // 'setup' ou 'play'
+        let startTime = 0;
+        let timerInterval = null;
+        
+        // Éléments DOM
+        const gameContainer = document.getElementById('game-container');
+        const differenceImage = document.getElementById('difference-image');
+        const setupBtn = document.getElementById('setup-btn');
+        const playBtn = document.getElementById('play-btn');
+        const setupControls = document.getElementById('setup-controls');
+        const imageUpload = document.getElementById('image-upload');
+        const saveKeysBtn = document.getElementById('save-keys');
+        const startGameBtn = document.getElementById('start-game');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+        
+        // Chargement de l'image
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    differenceImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Mode Création
+        setupBtn.addEventListener('click', function() {
+            gameMode = 'setup';
+            setupControls.style.display = 'block';
+            clearKeys();
+            differenceImage.src = '';
+            imageUpload.value = '';
+            stopTimer();
+        });
+        
+        // Mode Jeu
+        playBtn.addEventListener('click', function() {
+            if (keys.length === 0) {
+                alert('Veuillez d\'abord placer des clés en mode création');
+                return;
+            }
+            gameMode = 'play';
+            setupControls.style.display = 'none';
+            hideKeys();
+            startTimer();
+            foundKeys = 0;
+            updateScore();
+        });
+        
+        // Placer des clés
+        gameContainer.addEventListener('click', function(e) {
+            if (gameMode !== 'setup' || !differenceImage.src) return;
+            
+            const rect = gameContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const key = document.createElement('div');
+            key.className = 'key';
+            key.style.left = x + 'px';
+            key.style.top = y + 'px';
+            key.dataset.x = x;
+            key.dataset.y = y;
+            
+            gameContainer.appendChild(key);
+            keys.push({ x, y });
+        });
+        
+        // Enregistrer les clés
+        saveKeysBtn.addEventListener('click', function() {
+            if (keys.length === 0) {
+                alert('Veuillez placer au moins une clé');
+                return;
+            }
+            alert(`${keys.length} clés enregistrées`);
+        });
+        
+        // Commencer le jeu
+        startGameBtn.addEventListener('click', function() {
+            playBtn.click();
+        });
+        
+        // Trouver les clés
+        gameContainer.addEventListener('click', function(e) {
+            if (gameMode !== 'play') return;
+            
+            const rect = gameContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            keys.forEach((key, index) => {
+                const distance = Math.sqrt(
+                    Math.pow(clickX - key.x, 2) + 
+                    Math.pow(clickY - key.y, 2)
+                );
+                
+                if (distance < 30) { // Zone de détection
+                    const keyElements = document.querySelectorAll('.key');
+                    if (!keyElements[index].classList.contains('found')) {
+                        keyElements[index].classList.add('found');
+                        foundKeys++;
+                        updateScore();
+                        
+                        if (foundKeys === keys.length) {
+                            stopTimer();
+                            alert(`Félicitations ! Vous avez trouvé toutes les clés en ${timerDisplay.textContent}`);
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Fonctions utilitaires
+        function clearKeys() {
+            document.querySelectorAll('.key').forEach(el => el.remove());
+            keys = [];
+        }
+        
+        function hideKeys() {
+            document.querySelectorAll('.key').forEach(el => {
+                el.style.backgroundImage = 'none';
+                el.style.backgroundColor = 'transparent';
+                el.classList.remove('found');
+            });
+        }
+        
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                timerDisplay.textContent = `Temps: ${elapsed}s`;
+            }, 1000);
+        }
+        
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+        
+        function updateScore() {
+            scoreDisplay.textContent = `Clés trouvées: ${foundKeys}/${keys.length}`;
+        }
+    </script>
+</body>
+</html>

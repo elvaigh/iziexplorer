@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Mémoire - Paires d'Icônes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Bootstrap JS et dépendances -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+        .game-container {
+            background-color: #4d555e;
+            text-align: center;
+            max-width: 1000px;
+            width: 100%;
+            border-radius: 25px;
+        }
+        .timer {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #c94754;
+            font-weight: bold;
+        }
+        .icons-grid {
+            display: grid;
+            justify-items: center;
+            align-items: center;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+            
+   
+        }
+        
+        .icon-card {
+            height: 200px;
+            width: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            border-radius: 15px;
+            background-color: #6d7a74;
+            transition: all 0.3s ease;
+            border: 5px solid #ffffff;
+        }
+
+
+
+        .icon-card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .icon-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .icon-card.matched {
+            visibility: hidden;
+        }
+        .icon-card.flipped {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: rgb(114, 134, 105);
+        }
+        .btn-restart {
+            padding: 10px 25px;
+            font-size: 1.1rem;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            min-height: 30px;
+        }
+        .success {
+            color: #28a745;
+        }
+        .failure {
+            color: #dc3545;
+        }
+
+    </style>
+</head>
+<body>
+
+    
+    
+    <div class="game-container">
+        <h1 class="mb-4">Jeu de Mémoire <i class="fas fa-gamepad" style="color:rgb(37, 175, 111)"></i></h1>
+        <div class="timer">Temps restant: <span id="time">30</span>s</div>
+        
+        <div class="icons-grid" id="grid"></div>
+        
+        <button class="btn btn-primary btn-restart" id="restartBtn">Recommencer</button>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuration du jeu
+        const icons = [
+            { name: 'fa-calendar-alt', color: '#FF6384' },
+            { name: 'fa-calendar-alt', color: '#FF6384' },
+            { name: 'fas fa-envelope', color: '#36A2EB' },
+            { name: 'fas fa-envelope', color: '#36A2EB' },
+            { name: 'fas fa-heart', color: '#FFCE56' },
+            { name: 'fas fa-heart', color: '#FFCE56' },
+            { name: 'fas fa-bell', color: '#4BC0C0' },
+            { name: 'fas fa-bell', color: '#4BC0C0' }
+        ];
+        
+        // Variables du jeu
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+    
+        let timer;
+        let timeLeft = 30;
+        let gameStarted = false;
+        
+        // Éléments DOM
+        const gridEl = document.getElementById('grid');
+        const timeEl = document.getElementById('time');
+        const messageEl = document.getElementById('message');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        // Initialisation du jeu
+        function initGame() {
+            // Réinitialiser les variables
+            clearInterval(timer);
+            timeLeft = 30;
+            timeEl.textContent = timeLeft;
+            matchedPairs = 0;
+            flippedCards = [];
+            gameStarted = false;
+            messageEl.textContent = '';
+            messageEl.className = 'message';
+            
+            // Mélanger les icônes
+            const shuffledIcons = [...icons].sort(() => Math.random() - 0.5);
+            
+            // Créer les cartes
+            gridEl.innerHTML = '';
+            cards = shuffledIcons.map((icon, index) => {
+                const card = document.createElement('div');
+                card.className = 'icon-card';
+                card.dataset.index = index;
+                card.dataset.name = icon.name;
+                card.innerHTML = `<i class="fas ${icon.name} fa-4x mb-3" id = "${index}" style="color: ${icon.color}"></i>`;
+                // Cacher l'icône par défaut
+                card.querySelector('i').style.visibility = 'hidden';
+                
+                card.addEventListener('click', () => flipCard(card));
+                gridEl.appendChild(card);
+                return card;
+            });
+        }
+        
+        // Retourner une carte
+        function flipCard(card) {
+            if (!gameStarted) {
+                startGame();
+            }
+            
+            // Ne pas retourner si déjà retournée ou appariée
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+            
+            // Ne pas retourner plus de 2 cartes
+            if (flippedCards.length >= 2) {
+                return;
+            }
+            
+            // Retourner la carte
+            card.classList.add('flipped');
+            card.querySelector('i').style.visibility = 'visible';
+            // card.style.border = '10px solid #ffffff';
+            flippedCards.push(card);
+            
+            // Vérifier si une paire est trouvée
+            if (flippedCards.length === 2) {
+                checkForMatch();
+            }
+        }
+        
+        // Vérifier si les cartes retournées correspondent
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+            
+            if (card1.dataset.name === card2.dataset.name) {
+                // card1.style.visibility = 'hidden';
+                // card2.style.visibility = 'hidden';
+                
+                // Paire trouvée
+                setTimeout(() => {
+                    // card1.classList.add('matched');
+                    // card2.classList.add('matched');
+                    
+                    flippedCards = [];
+                   
+                    matchedPairs++;
+                    
+                    // Vérifier si le jeu est terminé
+                    if (matchedPairs === icons.length / 2) {
+                        endGame(true);
+                    }
+                }, 500);
+            } else {
+                // Pas une paire, retourner les cartes
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    card1.querySelector('i').style.visibility = 'hidden';
+                    card2.querySelector('i').style.visibility = 'hidden';
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+        
+        // Démarrer le jeu
+        function startGame() {
+            if (gameStarted) return;
+            
+            gameStarted = true;
+            timer = setInterval(() => {
+                timeLeft--;
+                timeEl.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+        
+        // Terminer le jeu
+        function endGame(success) {
+            clearInterval(timer);
+            
+            if (success) {
+                messageEl.textContent = `Félicitations! Vous avez gagné avec ${timeLeft}s restantes!`;
+                messageEl.classList.add('success');
+            } else {
+                messageEl.textContent = 'Temps écoulé! Essayez encore.';
+                messageEl.classList.add('failure');
+            }
+        }
+        
+        // Événement pour le bouton recommencer
+        restartBtn.addEventListener('click', initGame);
+        
+        // Initialiser le jeu au chargement
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeux</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <!-- Inclusion du header -->
+  <div id="header"></div>
+
+  <!-- Contenu principal -->
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Jeux</h1>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGameModal">
+        <i class="fas fa-plus"></i> Ajouter un jeu
+      </button>
+    </div>
+
+    <!-- Tableau des jeux -->
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nom du jeu</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="games-list">
+        <!-- Les jeux seront chargés ici dynamiquement -->
+        <tr>
+          <td id="game-id">1</td>
+          <td>Jeu 1</td>
+          <td>Description du jeu 1</td>
+          <td>
+            <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Modifier</button>
+            <button class="btn btn-sm btn-danger" id="deleteGame"><i class="fas fa-trash"></i> Supprimer</button>
+          </td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Jeu 2</td>
+          <td>Description du jeu 2</td>
+          <td>
+            <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Modifier</button>
+            <button class="btn btn-sm btn-danger" id="deleteGame"><i class="fas fa-trash"></i> Supprimer</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal pour ajouter un jeu -->
+  <div class="modal fade" id="addGameModal" tabindex="-1" aria-labelledby="addGameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addGameModalLabel">Ajouter un jeu</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="add-game-form">
+            <div class="mb-3">
+              <label for="game-name" class="form-label">Nom du jeu</label>
+              <input type="text" class="form-control" id="game-name" required>
+            </div>
+            <div class="mb-3">
+              <label for="game-description" class="form-label">Description</label>
+              <textarea class="form-control" id="game-description" rows="3" required></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary fas" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary" id="saveGame">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inclusion du footer -->
+  <div id="footer"></div>
+
+  <!-- Bootstrap JS et dépendances -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+  <!-- Custom JS -->
+  <script src="/js/games.js"></script>
+  <!-- Script pour inclure le header et le footer -->
+  <script>
+    // Inclure le header
+    fetch('/views/header.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('header').innerHTML = data;
+      });
+
+    // Inclure le footer
+    fetch('/views/footer.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('footer').innerHTML = data;
+      });
+
+    // // Gestion du formulaire d'ajout de jeu
+    // document.getElementById('saveGame').addEventListener('click', function () {
+    //   const gameName = document.getElementById('game-name').value;
+    //   const gameDescription = document.getElementById('game-description').value;
+
+    //   if (gameName && gameDescription) {
+    //     // Ajouter le jeu au tableau (simulation)
+    //     const gamesList = document.getElementById('games-list');
+    //     const newRow = document.createElement('tr');
+    //     newRow.innerHTML = `
+    //       <td>${gamesList.children.length + 1}</td>
+    //       <td>${gameName}</td>
+    //       <td>${gameDescription}</td>
+    //       <td>
+    //         <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Modifier</button>
+    //         <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Supprimer</button>
+    //       </td>
+    //     `;
+    //     gamesList.appendChild(newRow);
+
+    //     // Fermer le modal
+    //     const addGameModal = bootstrap.Modal.getInstance(document.getElementById('addGameModal'));
+    //     addGameModal.hide();
+
+    //     // Réinitialiser le formulaire
+    //     document.getElementById('add-game-form').reset();
+    //   } else {
+    //     alert('Veuillez remplir tous les champs.');
+    //   }
+    // });
+  </script>
+</body>
+</html>
