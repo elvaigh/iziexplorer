@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { createTables } = require('./db');
+const db = require('./db');
 const gamesRoutes = require('./routes/gamesRoutes');
 const tasksRoutes = require('./routes/tasksRoutes');
 const tagsRoutes = require('./routes/tagsRoutes');
@@ -158,10 +158,8 @@ app.get('/tasks', (req, res) => {
 app.use(errorHandler);
 
 // Démarrer le serveur
-(async () => {
-  await createTables();
 
-  app.listen(PORT, () => {
-    console.log(`Serveur démarré sur http://localhost:${PORT}`);
-  });
- })();
+
+app.listen(PORT, () => {
+  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+});
